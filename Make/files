@@ -1,0 +1,4 @@
+
+meanVelocityForce.C
+
+LIB = $(FOAM_USER_LIBBIN)/libmeanvelocityforcef1
