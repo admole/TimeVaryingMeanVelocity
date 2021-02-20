@@ -23,7 +23,7 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "meanVelocityForce.H"
+#include "meanVelocityForceF1.H"
 #include "fvMatrices.H"
 #include "DimensionedField.H"
 #include "IFstream.H"
@@ -35,12 +35,12 @@ namespace Foam
 {
 namespace fv
 {
-    defineTypeNameAndDebug(meanVelocityForce, 0);
+    defineTypeNameAndDebug(meanVelocityForceF1, 0);
 
     addToRunTimeSelectionTable
     (
         option,
-        meanVelocityForce,
+        meanVelocityForceF1,
         dictionary
     );
 }
@@ -49,7 +49,7 @@ namespace fv
 
 // * * * * * * * * * * * * Protected Member Functions  * * * * * * * * * * * //
 
-void Foam::fv::meanVelocityForce::writeProps
+void Foam::fv::meanVelocityForceF1::writeProps
 (
     const scalar gradP
 ) const
@@ -77,7 +77,7 @@ void Foam::fv::meanVelocityForce::writeProps
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
-Foam::fv::meanVelocityForce::meanVelocityForce
+Foam::fv::meanVelocityForceF1::meanVelocityForceF1
 (
     const word& sourceName,
     const word& modelType,
@@ -86,13 +86,17 @@ Foam::fv::meanVelocityForce::meanVelocityForce
 )
 :
     cellSetOption(sourceName, modelType, dict, mesh),
-    Ubar_(coeffs_.get<vector>("Ubar")),
+    Ubar_(nullptr),
     gradP0_(0.0),
     dGradP_(0.0),
-    flowDir_(Ubar_/mag(Ubar_)),
+    flowDir_(0.0, 0.0, 0.0),
+    //flowDir_(nullptr),
     relaxation_(coeffs_.lookupOrDefault<scalar>("relaxation", 1.0)),
     rAPtr_(nullptr)
 {
+    Ubar_.reset(Function1<vector>::New("Ubar", coeffs_).ptr());
+    flowDir_ = Ubar_->value(0)/mag(Ubar_->value(0));
+
     coeffs_.readEntry("fields", fieldNames_);
 
     if (fieldNames_.size() != 1)
@@ -122,7 +126,7 @@ Foam::fv::meanVelocityForce::meanVelocityForce
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
-Foam::scalar Foam::fv::meanVelocityForce::magUbarAve
+Foam::scalar Foam::fv::meanVelocityForceF1::magUbarAve
 (
     const volVectorField& U
 ) const
@@ -145,7 +149,7 @@ Foam::scalar Foam::fv::meanVelocityForce::magUbarAve
 }
 
 
-void Foam::fv::meanVelocityForce::correct(volVectorField& U)
+void Foam::fv::meanVelocityForceF1::correct(volVectorField& U)
 {
     const scalarField& rAU = rAPtr_();
 
@@ -169,7 +173,8 @@ void Foam::fv::meanVelocityForce::correct(volVectorField& U)
 
     // Calculate the pressure gradient increment needed to adjust the average
     // flow-rate to the desired value
-    dGradP_ = relaxation_*(mag(Ubar_) - magUbarAve)/rAUave;
+    const scalar t = mesh_.time().value();
+    dGradP_ = relaxation_*(mag(Ubar_->value(t)) - magUbarAve)/rAUave;
 
     // Apply correction to velocity field
     forAll(cells_, i)
@@ -189,7 +194,7 @@ void Foam::fv::meanVelocityForce::correct(volVectorField& U)
 }
 
 
-void Foam::fv::meanVelocityForce::addSup
+void Foam::fv::meanVelocityForceF1::addSup
 (
     fvMatrix<vector>& eqn,
     const label fieldi
@@ -217,7 +222,7 @@ void Foam::fv::meanVelocityForce::addSup
 }
 
 
-void Foam::fv::meanVelocityForce::addSup
+void Foam::fv::meanVelocityForceF1::addSup
 (
     const volScalarField& rho,
     fvMatrix<vector>& eqn,
@@ -228,7 +233,7 @@ void Foam::fv::meanVelocityForce::addSup
 }
 
 
-void Foam::fv::meanVelocityForce::constrain
+void Foam::fv::meanVelocityForceF1::constrain
 (
     fvMatrix<vector>& eqn,
     const label
@@ -262,7 +267,7 @@ void Foam::fv::meanVelocityForce::constrain
 }
 
 
-bool Foam::fv::meanVelocityForce::read(const dictionary& dict)
+bool Foam::fv::meanVelocityForceF1::read(const dictionary& dict)
 {
     NotImplemented;
 

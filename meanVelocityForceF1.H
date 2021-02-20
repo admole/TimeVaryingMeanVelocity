@@ -47,13 +47,14 @@ SourceFiles
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef meanVelocityForce_H
-#define meanVelocityForce_H
+#ifndef meanVelocityForceF1_H
+#define meanVelocityForceF1_H
 
 #include "autoPtr.H"
 #include "fvMesh.H"
 #include "volFields.H"
 #include "cellSetOption.H"
+#include "Function1.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -66,7 +67,7 @@ namespace fv
                Class meanVelocityForce Declaration
 \*---------------------------------------------------------------------------*/
 
-class meanVelocityForce
+class meanVelocityForceF1
 :
     public cellSetOption
 {
@@ -75,7 +76,8 @@ protected:
     // Protected data
 
         //- Average velocity
-        vector Ubar_;
+        //vector Ubar_;
+        autoPtr<Function1<vector>> Ubar_;
 
         //- Pressure gradient before correction
         scalar gradP0_;
@@ -111,22 +113,22 @@ private:
     // Private Member Functions
 
         //- No copy construct
-        meanVelocityForce(const meanVelocityForce&) = delete;
+        meanVelocityForceF1(const meanVelocityForceF1&) = delete;
 
         //- No copy assignment
-        void operator=(const meanVelocityForce&) = delete;
+        void operator=(const meanVelocityForceF1&) = delete;
 
 
 public:
 
     //- Runtime type information
-    TypeName("meanVelocityForce");
+    TypeName("meanVelocityForceF1");
 
 
     // Constructors
 
         //- Construct from explicit source name and mesh
-        meanVelocityForce
+        meanVelocityForceF1
         (
             const word& sourceName,
             const word& modelType,
