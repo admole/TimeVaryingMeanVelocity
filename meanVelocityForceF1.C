@@ -176,6 +176,9 @@ void Foam::fv::meanVelocityForceF1::correct(volVectorField& U)
     const scalar t = mesh_.time().value();
     dGradP_ = relaxation_*(mag(Ubar_->value(t)) - magUbarAve)/rAUave;
 
+    Ubar_.reset(Function1<vector>::New("Ubar", coeffs_).ptr());
+    flowDir_ = Ubar_->value(t)/mag(Ubar_->value(t));
+
     // Apply correction to velocity field
     forAll(cells_, i)
     {
